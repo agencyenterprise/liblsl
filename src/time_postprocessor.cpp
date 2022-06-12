@@ -4,8 +4,9 @@
 #include <limits>
 #include <utility>
 
+#if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
-#ifdef __clang__
+#elif defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
 #endif
 
@@ -46,8 +47,8 @@ double time_postprocessor::process_timestamp(double value) {
 	if (options_ & proc_threadsafe) {
 		std::lock_guard<std::mutex> lock(processing_mut_);
 		return process_internal(value);
-	} else
-		return process_internal(value);
+	}
+	return process_internal(value);
 }
 
 void time_postprocessor::skip_samples(uint32_t skipped_samples) {

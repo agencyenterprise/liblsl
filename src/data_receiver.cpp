@@ -108,7 +108,7 @@ double data_receiver::pull_sample_typed(T *buffer, uint32_t buffer_elements, dou
 			throw std::range_error("The number of buffer elements provided does not match the "
 								   "number of channels in the sample.");
 		s->retrieve_typed(buffer);
-		return s->timestamp;
+		return s->timestamp();
 	} else return 0.0;
 }
 
@@ -126,7 +126,7 @@ double data_receiver::pull_sample_untyped(void *buffer, int buffer_bytes, double
 			throw std::range_error("The size of the provided buffer does not match the number of "
 								   "bytes in the sample.");
 		s->retrieve_untyped(buffer);
-		return s->timestamp;
+		return s->timestamp();
 	}
 	else return 0.0;
 }
@@ -258,7 +258,7 @@ void data_receiver::data_thread() {
 
 				if (data_protocol_version == 100) {
 					// portable binary archive (parse archive header)
-					inarch.reset(new eos::portable_iarchive(server_stream));
+					inarch = std::make_unique<eos::portable_iarchive>(server_stream);
 					// receive stream_info message from server
 					std::string infomsg;
 					*inarch >> infomsg;
@@ -316,11 +316,11 @@ void data_receiver::data_thread() {
 					else
 						*inarch >> *samp;
 					// deduce timestamp if necessary
-					if (samp->timestamp == DEDUCED_TIMESTAMP) {
-						samp->timestamp = last_timestamp;
-						if (srate != IRREGULAR_RATE) samp->timestamp += 1.0 / srate;
+					if (samp->timestamp() == DEDUCED_TIMESTAMP) {
+						samp->timestamp() = last_timestamp;
+						if (srate != IRREGULAR_RATE) samp->timestamp() += 1.0 / srate;
 					}
-					last_timestamp = samp->timestamp;
+					last_timestamp = samp->timestamp();
 					// push it into the sample queue
 					sample_queue_.push_sample(samp);
 					// periodically update the last receive time to keep the watchdog happy

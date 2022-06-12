@@ -60,6 +60,16 @@ private:
 	/// Pop a sample from the freelist (multi-producer/single-consumer queue by Dmitry Vjukov)
 	sample *pop_freelist();
 
+	/// Return the address of a pre-allocated sample, #0 is the sentinel value
+	sample *sample_by_index(std::size_t idx) const {
+		return reinterpret_cast<sample*>(storage_ + idx * sample_size_);
+	}
+
+	/// Return the address of the sentinel value
+	sample *sentinel() const {
+		return sample_by_index(0);
+	}
+
 	friend class sample;
 	/// the channel format to construct samples with
 	const lsl_channel_format_t fmt_;
@@ -71,12 +81,10 @@ private:
 	const uint32_t storage_size_;
 	/// a slab of storage for pre-allocated samples
 	char *const storage_;
-	/// a sentinel element for our freelist
-	sample *sentinel_;
 	/// head of the freelist
 	std::atomic<sample *> head_;
 	/// tail of the freelist
-	sample *tail_;
+	std::atomic<sample *> tail_;
 };
 
 /**
@@ -87,8 +95,6 @@ private:
 class sample {
 public:
 	friend class factory;
-	/// time-stamp of the sample
-	double timestamp{0.0};
 	/// whether the sample shall be buffered or pushed through
 	bool pushthrough{false};
 
@@ -101,8 +107,10 @@ private:
 	std::atomic<int> refcount_;
 	/// linked list of samples, for use in a freelist
 	std::atomic<sample *> next_;
-	/// the factory used to reclaim this sample, if any
-	factory *factory_;
+	/// the factory used to reclaim this sample
+	factory *const factory_;
+	/// time-stamp of the sample
+	double timestamp_{0.0};
 	/// the data payload begins here
 	alignas(8) int32_t data_{0};
 
@@ -111,6 +119,8 @@ public:
 
 	/// Destructor for a sample.
 	~sample() noexcept;
+
+	double &timestamp() { return timestamp_; }
 
 	/// Delete a sample.
 	void operator delete(void *x) noexcept;
@@ -153,13 +163,13 @@ public:
 	static void convert_endian(void *data, uint32_t n, uint32_t width);
 
 	/// Serialize a sample into a portable archive (protocol 1.00).
-	void serialize(eos::portable_oarchive &ar, const uint32_t archive_version) const;
+	void serialize(eos::portable_oarchive &ar, uint32_t archive_version) const;
 
 	/// Deserialize a sample from a portable archive (protocol 1.00).
-	void serialize(eos::portable_iarchive &ar, const uint32_t archive_version);
+	void serialize(eos::portable_iarchive &ar, uint32_t archive_version);
 
 	/// Serialize (read/write) the channel data.
-	template <class Archive> void serialize_channels(Archive &ar, const uint32_t archive_version);
+	template <class Archive> void serialize_channels(Archive &ar, uint32_t archive_version);
 
 	/// Assign a test pattern to the sample (for protocol validation)
 	sample &assign_test_pattern(int offset = 1);

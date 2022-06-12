@@ -3,14 +3,17 @@ name: MinGW Windows static test
 on:
   push:
     branches: ['*']
-    tags: 
-    paths_ignore: ['docs/**', '.travis.yml']
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!.github/**'
+      - '.github/workflows/mingw_static.yml'
   pull_request:
 
 jobs:
   build:
     name: MinGW batteries-included
-    runs-on: windows-latest
+    runs-on: windows-2019
     
     defaults:
       run:

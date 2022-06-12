@@ -16,7 +16,7 @@ TEST_CASE("consumer_queue", "[queue][basic]") {
 	CHECK(queue.read_available() == size);
 
 	// Are the right samples dropped when going over capacity?
-	CHECK(static_cast<int>(queue.pop_sample()->timestamp) == 1);
+	CHECK(static_cast<int>(queue.pop_sample()->timestamp()) == 1);
 
 	// Does flush() return the correct count?
 	CHECK(queue.flush() == size - 1);
@@ -68,7 +68,7 @@ TEST_CASE("sample conversion", "[basic]") {
 			CHECK(values[j] == static_cast<int64_t>(buf[j]));
 			CHECK(strbuf[j] == std::to_string(buf[j]));
 		}
-		values[0] = buf[0] << 1;
-		values[1] = -buf[0];
+		values[0] = (double)(buf[0] << 1);
+		values[1] = (double)(-buf[0]);
 	}
 }
