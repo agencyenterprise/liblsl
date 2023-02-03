@@ -22,7 +22,7 @@ LIBLSL_C_API lsl_outlet lsl_create_outlet_ex(
 
 LIBLSL_C_API lsl_outlet lsl_create_outlet(
 	lsl_streaminfo info, int32_t chunk_size, int32_t max_buffered) {
-	return lsl_create_outlet_ex(info, chunk_size, max_buffered, transp_default);
+	return lsl_create_outlet_ex(info, chunk_size, max_buffered, transp_sync_blocking);
 }
 
 LIBLSL_C_API void lsl_destroy_outlet(lsl_outlet out) {
